@@ -57,8 +57,9 @@ public class MainActivity extends AppCompatActivity {
 //    private static final int GOOGLE_FIT_RUNNING_ON_TREADMILL_ACTIVITY = 58;
     private static final int GOOGLE_FIT_TREADMILL_ACTIVITY = 88;
     private SessionReadRequest sessionsRequest;
-    public TextView fitData;
+    public static TextView fitData;
     public String data;
+    public static double distance = 0;
 
 
     @Override
@@ -240,9 +241,13 @@ public class MainActivity extends AppCompatActivity {
             Log.i(TAG, "\tStart: " + dateFormat.format(dp.getStartTime(TimeUnit.MILLISECONDS)));
             Log.i(TAG, "\tEnd: " + dateFormat.format(dp.getEndTime(TimeUnit.MILLISECONDS)));
             for(Field field : dp.getDataType().getFields()) {
+                if(field.getName().contains("distance"))
+                    distance += dp.getValue(field).asFloat();
                 Log.i(TAG, "\tField: " + field.getName() +
                         " Value: " + dp.getValue(field));
             }
+            Log.i(TAG, "Total Distance: " + metersToMiles(distance) + " miles");
+            fitData.append("\nTotal Distance: " + metersToMiles(distance) + " miles");
         }
     }
 
