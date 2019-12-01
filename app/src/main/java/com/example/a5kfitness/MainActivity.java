@@ -1,41 +1,34 @@
 package com.example.a5kfitness;
 
 import android.Manifest;
-import android.app.Activity;
-import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
-import android.net.Uri;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.View;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.fitness.Fitness;
-import com.google.android.gms.fitness.FitnessActivities;
 import com.google.android.gms.fitness.FitnessOptions;
+import com.google.android.gms.fitness.data.Bucket;
 import com.google.android.gms.fitness.data.DataPoint;
 import com.google.android.gms.fitness.data.DataSet;
 import com.google.android.gms.fitness.data.DataSource;
 import com.google.android.gms.fitness.data.DataType;
 import com.google.android.gms.fitness.data.Field;
 import com.google.android.gms.fitness.data.Session;
-import com.google.android.gms.fitness.request.DataDeleteRequest;
-import com.google.android.gms.fitness.request.SessionInsertRequest;
+import com.google.android.gms.fitness.request.DataReadRequest;
 import com.google.android.gms.fitness.request.SessionReadRequest;
+import com.google.android.gms.fitness.result.DataReadResponse;
 import com.google.android.gms.fitness.result.SessionReadResponse;
-import com.google.android.gms.tasks.Continuation;
+import com.google.android.gms.fitness.result.SessionReadResult;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
-import com.google.android.material.snackbar.Snackbar;
 
 import java.text.DateFormat;
 import java.util.Calendar;
@@ -43,6 +36,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import static java.text.DateFormat.getDateInstance;
 import static java.text.DateFormat.getTimeInstance;
 
 
@@ -53,48 +47,50 @@ import static java.text.DateFormat.getTimeInstance;
  * represent data in a Session, as well as how to use ActivitySegments.
  */
 public class MainActivity extends AppCompatActivity {
-    public static final String TAG = "BasicSessions";
-    public static final String SAMPLE_SESSION_NAME = "Afternoon run";
-    private static final String DATE_FORMAT = "yyyy.MM.dd HH:mm:ss";
-
+    private static final String TAG = "FIT_TAG";
     private static final int REQUEST_OAUTH_REQUEST_CODE = 1;
     private static final int REQUEST_PERMISSIONS_REQUEST_CODE = 34;
+//    private static final String SAMPLE_SESSION_NAME = "Lunch walk";
+//    private static final int GOOGLE_FIT_RUNNING_ATIVITY = 8;
+//    private static final int GGOOGLE_FIT_JOGGING_ACTIVITY = 56;
+//    private static final int GOOGLE_FIT_RUNNING_ON_SAND_ACTIVITY = 57;
+//    private static final int GOOGLE_FIT_RUNNING_ON_TREADMILL_ACTIVITY = 58;
+    private static final int GOOGLE_FIT_TREADMILL_ACTIVITY = 88;
+    private SessionReadRequest sessionsRequest;
+    public TextView fitData;
+    public String data;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        fitData = findViewById(R.id.fit_Data);
 
-        // When permissions are revoked the app is restarted so onCreate is sufficient to check for
-        // permissions core to the Activity's functionality.
-        if (hasRuntimePermissions()) {
-            insertAndVerifySessionWrapper();
-        } else {
-            System.out.println("run time permissions what are those");
-        }
-    }
-
-    /**
-     * A wrapper for {@link #insertAndVerifySession}. If the user account has OAuth permission,
-     * continue to {@link #insertAndVerifySession}, else request OAuth permission for the account.
-     */
-    private void insertAndVerifySessionWrapper() {
-        if (hasOAuthPermission()) {
-            insertAndVerifySession();
-        } else {
+        if(!hasOAuthPermission()){
             requestOAuthPermission();
         }
+            sessionsRequest =  readFitnessSession();
+            data = sessionsRequest.toString();
+            fitData.setText("Data: ");
+            readHistoryData();
+            verifySession();
+
     }
 
     /**
      * Checks if user's account has OAuth permission to Fitness API.
+     * Keep
      */
     private boolean hasOAuthPermission() {
         FitnessOptions fitnessOptions = getFitnessSignInOptions();
         return GoogleSignIn.hasPermissions(GoogleSignIn.getLastSignedInAccount(this), fitnessOptions);
     }
 
-    /** Launches the Google SignIn activity to request OAuth permission for the user. */
+    /**
+     * Launches the Google SignIn activity to request OAuth permission for the user.
+     * Keep
+     */
     private void requestOAuthPermission() {
         FitnessOptions fitnessOptions = getFitnessSignInOptions();
         GoogleSignIn.requestPermissions(
@@ -104,60 +100,48 @@ public class MainActivity extends AppCompatActivity {
                 fitnessOptions);
     }
 
-    /** Gets {@link FitnessOptions} in order to check or request OAuth permission for the user. */
+    /**
+     * Gets {@link FitnessOptions} in order to check or request OAuth permission for the user.
+     * Keep
+     */
     private FitnessOptions getFitnessSignInOptions() {
         return FitnessOptions.builder()
-                .addDataType(DataType.TYPE_ACTIVITY_SEGMENT, FitnessOptions.ACCESS_WRITE)
-                .addDataType(DataType.TYPE_SPEED, FitnessOptions.ACCESS_WRITE)
+                .addDataType(DataType.TYPE_ACTIVITY_SEGMENT, FitnessOptions.ACCESS_READ)
+                .addDataType(DataType.TYPE_DISTANCE_CUMULATIVE, FitnessOptions.ACCESS_READ)
+                .addDataType(DataType.AGGREGATE_DISTANCE_DELTA, FitnessOptions.ACCESS_READ)
                 .build();
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (resultCode == Activity.RESULT_OK) {
-            if (requestCode == REQUEST_OAUTH_REQUEST_CODE) {
-                insertAndVerifySession();
-            }
-        }
-    }
-
     /**
-     *  Creates and executes a {@link SessionInsertRequest} using {@link
-     *  com.google.android.gms.fitness.SessionsClient} to insert a session.
+     * Returns a {@link SessionReadRequest} for all speed data in the past week.
      */
-    private Task<Void> insertSession() {
-        //First, create a new session and an insertion request.
-        SessionInsertRequest insertRequest = insertFitnessSession();
+    private SessionReadRequest readFitnessSession() {
+        // [START build_read_session_request]
+        // Set a start and end time for our query, using a start time of 1 week before this moment.
+        Calendar cal = Calendar.getInstance();
+        Date now = new Date();
+        cal.setTime(now);
+        long endTime = cal.getTimeInMillis();
+        cal.add(Calendar.DAY_OF_YEAR, -1);
+        long startTime = cal.getTimeInMillis();
 
-        // [START insert_session]
-        // Then, invoke the Sessions API to insert the session and await the result,
-        // which is possible here because of the AsyncTask. Always include a timeout when
-        // calling await() to avoid hanging that can occur from the service being shutdown
-        // because of low memory or other conditions.
-        Log.i(TAG, "Inserting the session in the Sessions API");
-        return Fitness.getSessionsClient(this, GoogleSignIn.getLastSignedInAccount(this))
-                .insertSession(insertRequest)
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void aVoid) {
-                        // At this point, the session has been inserted and can be read.
-                        Log.i(TAG, "Session insert was successful!");
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.i(TAG, "There was a problem inserting the session: " +
-                                e.getLocalizedMessage());
-                    }
-                });
-        // [END insert_session]
+        // Build a session read request
+        SessionReadRequest readRequest = new SessionReadRequest.Builder()
+                .setTimeInterval(startTime, endTime, TimeUnit.MILLISECONDS)
+//                .read(DataType.TYPE_ACTIVITY_SEGMENT)
+//                .readSessionsFromAllApps().enableServerQueries()
+                .read(DataType.TYPE_DISTANCE_CUMULATIVE)
+                .read(DataType.AGGREGATE_DISTANCE_DELTA)
+                .readSessionsFromAllApps()
+                .enableServerQueries()
+                .build();
+        // [END build_read_session_request]
+
+        return readRequest;
     }
 
     /**
      *  Creates and executes a {@link SessionReadRequest} using {@link
-     *  com.google.android.gms.fitness.SessionsClient} to verify the insertion succeeded .
      */
     private Task<SessionReadResponse> verifySession() {
         // Begin by creating the query.
@@ -174,182 +158,87 @@ public class MainActivity extends AppCompatActivity {
                     public void onSuccess(SessionReadResponse sessionReadResponse) {
                         // Get a list of the sessions that match the criteria to check the result.
                         List<Session> sessions = sessionReadResponse.getSessions();
+                        fitData.append("Made it in " + sessions.size());
                         Log.i(TAG, "Session read was successful. Number of returned sessions is: "
                                 + sessions.size());
 
                         for (Session session : sessions) {
                             // Process the session
-                            dumpSession(session);
+                            logSession(session);
+                            fitData.append("\n" + session.getActivity());
 
                             // Process the data sets for this session
                             List<DataSet> dataSets = sessionReadResponse.getDataSet(session);
                             for (DataSet dataSet : dataSets) {
-                                dumpDataSet(dataSet);
+                                fitData.append(dataSet.toString());
+                                logDataSet(dataSet);
                             }
                         }
                     }
-                })
-                .addOnFailureListener(new OnFailureListener() {
+                }).addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
+                        fitData.append("Failed to read session" + e);
                         Log.i(TAG, "Failed to read session");
                     }
                 });
         // [END read_session]
     }
 
-    /**
-     *  Inserts and verifies a session by chaining {@link Task} form {@link #insertSession} and
-     *  {@link #verifySession}.
-     */
-    private void insertAndVerifySession() {
+    private Task<DataReadResponse> readHistoryData(){
+        DataReadRequest readRequest = queryFitnessData();
 
-        insertSession().continueWithTask(new Continuation<Void, Task<SessionReadResponse>>() {
-            @Override
-            public Task<SessionReadResponse> then(@NonNull Task<Void> task) throws Exception {
-                return verifySession();
-            }
-        });
+        return Fitness.getHistoryClient(this, GoogleSignIn.getLastSignedInAccount(this))
+                .readData(readRequest)
+                .addOnSuccessListener(
+                        new OnSuccessListener<DataReadResponse>() {
+                            @Override
+                            public void onSuccess(DataReadResponse dataReadResponse) {
+                                logDataResponse(dataReadResponse);
+                            }
+                        }
+                );
     }
 
-    /**
-     *  Creates a {@link SessionInsertRequest} for a run that consists of 10 minutes running,
-     *  10 minutes walking, and 10 minutes of running. The request contains two {@link DataSet}s:
-     *  speed data and activity segments data.
-     *
-     *  {@link Session}s are time intervals that are associated with all Fit data that falls into
-     *  that time interval. This data can be inserted when inserting a session or independently,
-     *  without affecting the association between that data and the session. Future queries for
-     *  that session will return all data relevant to the time interval created by the session.
-     *
-     *  Sessions may contain {@link DataSet}s, which are comprised of {@link DataPoint}s and a
-     *  {@link DataSource}.
-     *  A {@link DataPoint} is associated with a Fit {@link DataType}, which may be
-     *  derived from the {@link DataSource}, as well as a time interval, and a value. A given
-     *  {@link DataSet} may only contain data for a single data type, but a {@link Session} can
-     *  contain multiple {@link DataSet}s.
-     */
-    private SessionInsertRequest insertFitnessSession() {
-        Log.i(TAG, "Creating a new session for an afternoon run");
-        // Setting start and end times for our run.
-        Calendar cal = Calendar.getInstance();
-        Date now = new Date();
-        cal.setTime(now);
-        // Set a range of the run, using a start time of 30 minutes before this moment,
-        // with a 10-minute walk in the middle.
-        long endTime = cal.getTimeInMillis();
-        cal.add(Calendar.MINUTE, -10);
-        long endWalkTime = cal.getTimeInMillis();
-        cal.add(Calendar.MINUTE, -10);
-        long startWalkTime = cal.getTimeInMillis();
-        cal.add(Calendar.MINUTE, -10);
-        long startTime = cal.getTimeInMillis();
-
-        // Create a data source
-        DataSource speedDataSource = new DataSource.Builder()
-                .setAppPackageName(this.getPackageName())
-                .setDataType(DataType.TYPE_SPEED)
-                .setName(SAMPLE_SESSION_NAME + "- speed")
-                .setType(DataSource.TYPE_RAW)
-                .build();
-
-        float runSpeedMps = 10;
-        float walkSpeedMps = 3;
-        // Create a data set of the run speeds to include in the session.
-        DataSet speedDataSet = DataSet.create(speedDataSource);
-
-        DataPoint firstRunSpeed = speedDataSet.createDataPoint()
-                .setTimeInterval(startTime, startWalkTime, TimeUnit.MILLISECONDS);
-        firstRunSpeed.getValue(Field.FIELD_SPEED).setFloat(runSpeedMps);
-        speedDataSet.add(firstRunSpeed);
-
-        DataPoint walkSpeed = speedDataSet.createDataPoint()
-                .setTimeInterval(startWalkTime, endWalkTime, TimeUnit.MILLISECONDS);
-        walkSpeed.getValue(Field.FIELD_SPEED).setFloat(walkSpeedMps);
-        speedDataSet.add(walkSpeed);
-
-        DataPoint secondRunSpeed = speedDataSet.createDataPoint()
-                .setTimeInterval(endWalkTime, endTime, TimeUnit.MILLISECONDS);
-        secondRunSpeed.getValue(Field.FIELD_SPEED).setFloat(runSpeedMps);
-        speedDataSet.add(secondRunSpeed);
-
-        // [START build_insert_session_request_with_activity_segments]
-        // Create a second DataSet of ActivitySegments to indicate the runner took a 10-minute walk
-        // in the middle of the run.
-        DataSource activitySegmentDataSource = new DataSource.Builder()
-                .setAppPackageName(this.getPackageName())
-                .setDataType(DataType.TYPE_ACTIVITY_SEGMENT)
-                .setName(SAMPLE_SESSION_NAME + "-activity segments")
-                .setType(DataSource.TYPE_RAW)
-                .build();
-        DataSet activitySegments = DataSet.create(activitySegmentDataSource);
-
-        DataPoint firstRunningDp = activitySegments.createDataPoint()
-                .setTimeInterval(startTime, startWalkTime, TimeUnit.MILLISECONDS);
-        firstRunningDp.getValue(Field.FIELD_ACTIVITY).setActivity(FitnessActivities.RUNNING);
-        activitySegments.add(firstRunningDp);
-
-        DataPoint walkingDp = activitySegments.createDataPoint()
-                .setTimeInterval(startWalkTime, endWalkTime, TimeUnit.MILLISECONDS);
-        walkingDp.getValue(Field.FIELD_ACTIVITY).setActivity(FitnessActivities.WALKING);
-        activitySegments.add(walkingDp);
-
-        DataPoint secondRunningDp = activitySegments.createDataPoint()
-                .setTimeInterval(endWalkTime, endTime, TimeUnit.MILLISECONDS);
-        secondRunningDp.getValue(Field.FIELD_ACTIVITY).setActivity(FitnessActivities.RUNNING);
-        activitySegments.add(secondRunningDp);
-
-        // [START build_insert_session_request]
-        // Create a session with metadata about the activity.
-        Session session = new Session.Builder()
-                .setName(SAMPLE_SESSION_NAME)
-                .setDescription("Long run around Shoreline Park")
-                .setIdentifier("UniqueIdentifierHere")
-                .setActivity(FitnessActivities.RUNNING)
-                .setStartTime(startTime, TimeUnit.MILLISECONDS)
-                .setEndTime(endTime, TimeUnit.MILLISECONDS)
-                .build();
-
-        // Build a session insert request
-        SessionInsertRequest insertRequest = new SessionInsertRequest.Builder()
-                .setSession(session)
-                .addDataSet(speedDataSet)
-                .addDataSet(activitySegments)
-                .build();
-        // [END build_insert_session_request]
-        // [END build_insert_session_request_with_activity_segments]
-
-        return insertRequest;
-    }
-
-    /**
-     * Returns a {@link SessionReadRequest} for all speed data in the past week.
-     */
-    private SessionReadRequest readFitnessSession() {
-        Log.i(TAG, "Reading History API results for session: " + SAMPLE_SESSION_NAME);
-        // [START build_read_session_request]
-        // Set a start and end time for our query, using a start time of 1 week before this moment.
+    public static DataReadRequest queryFitnessData(){
         Calendar cal = Calendar.getInstance();
         Date now = new Date();
         cal.setTime(now);
         long endTime = cal.getTimeInMillis();
-        cal.add(Calendar.WEEK_OF_YEAR, -1);
+        cal.add(Calendar.DAY_OF_YEAR, -1);
         long startTime = cal.getTimeInMillis();
 
-        // Build a session read request
-        SessionReadRequest readRequest = new SessionReadRequest.Builder()
-                .setTimeInterval(startTime, endTime, TimeUnit.MILLISECONDS)
-                .read(DataType.TYPE_SPEED)
-                .setSessionName(SAMPLE_SESSION_NAME)
+        DateFormat dateFormat = getDateInstance();
+
+        Log.i(TAG, "Start of data Search: " + dateFormat.format(startTime));
+        Log.i(TAG, "End of data search: " + dateFormat.format(endTime));
+
+        DataReadRequest readRequest =
+                new DataReadRequest.Builder()
+                .aggregate(DataType.TYPE_DISTANCE_DELTA, DataType.AGGREGATE_DISTANCE_DELTA)
+                        .aggregate(DataType.TYPE_ACTIVITY_SEGMENT, DataType.AGGREGATE_ACTIVITY_SUMMARY)
+                .bucketByTime(1, TimeUnit.DAYS)
+                .setTimeRange(startTime, endTime, TimeUnit.MILLISECONDS)
                 .build();
-        // [END build_read_session_request]
 
         return readRequest;
     }
 
-    private void dumpDataSet(DataSet dataSet) {
-        Log.i(TAG, "Data returned for Data type: " + dataSet.getDataType().getName());
-        for (DataPoint dp : dataSet.getDataPoints()) {
+    public static void logDataResponse(DataReadResponse dataReadResult){
+        if(dataReadResult.getBuckets().size() > 0) {
+            Log.i(TAG, "Number of buckets of DataSets is: " + dataReadResult.getBuckets().size());
+            for(Bucket bucket: dataReadResult.getBuckets()){
+                List<DataSet> dataSets = bucket.getDataSets();
+                for(DataSet dataSet: dataSets) {
+                    logDataSet(dataSet);
+                }
+            }
+        }
+    }
+
+    private static void logDataSet(DataSet dataSet) {
+        Log.i(TAG, "Data returned from Data type: " + dataSet.getDataType());
+        for(DataPoint dp: dataSet.getDataPoints()) {
             DateFormat dateFormat = getTimeInstance();
             Log.i(TAG, "Data point:");
             Log.i(TAG, "\tType: " + dp.getDataType().getName());
@@ -362,97 +251,41 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void dumpSession(Session session) {
+    private void logSession(Session session) {
         DateFormat dateFormat = getTimeInstance();
         Log.i(TAG, "Data returned for Session: " + session.getName()
                 + "\n\tDescription: " + session.getDescription()
+                + "\n\tActivity: " + session.getActivity()
                 + "\n\tStart: " + dateFormat.format(session.getStartTime(TimeUnit.MILLISECONDS))
                 + "\n\tEnd: " + dateFormat.format(session.getEndTime(TimeUnit.MILLISECONDS)));
     }
 
+//    private void readAllRequests () {
+//        Calendar cal = Calendar.getInstance();
+//        Date now = new Date();
+//        cal.setTime(now);
+//        long endTime = cal.getTimeInMillis();
+//        cal.add(Calendar.WEEK_OF_YEAR, -1);
+//        long startTime = cal.getTimeInMillis();
+//
+//        SessionReadRequest readRequest = new SessionReadRequest.Builder()
+//                .setTimeInterval(startTime, endTime, TimeUnit.MILLISECONDS)
+//                .read(DataType.TYPE_DISTANCE_CUMULATIVE)
+//                .setSessionName(SAMPLE_SESSION_NAME)
+//                .build();
+//
+//        PendingResult<SessionReadResult> sessionReadResult =
+//                Fitness.getSessionsClient().readSession();
+//    }
+
     /**
-     * Deletes the {@link DataSet} we inserted with our {@link Session} from the History API.
-     * In this example, we delete all step count data for the past 24 hours. Note that this
-     * deletion uses the History API, and not the Sessions API, since sessions are truly just time
-     * intervals over a set of data, and the data is what we are interested in removing.
+     * Returns the current state of the permissions needed.
      */
-    private void deleteSession() {
-        Log.i(TAG, "Deleting today's session data for speed");
-
-        // Set a start and end time for our data, using a start time of 1 day before this moment.
-        Calendar cal = Calendar.getInstance();
-        Date now = new Date();
-        cal.setTime(now);
-        long endTime = cal.getTimeInMillis();
-        cal.add(Calendar.DAY_OF_YEAR, -1);
-        long startTime = cal.getTimeInMillis();
-
-        // Create a delete request object, providing a data type and a time interval
-        DataDeleteRequest request = new DataDeleteRequest.Builder()
-                .setTimeInterval(startTime, endTime, TimeUnit.MILLISECONDS)
-                .addDataType(DataType.TYPE_SPEED)
-                .deleteAllSessions() // Or specify a particular session here
-                .build();
-
-        // Delete request using HistoryClient and specify listeners that will check the result.
-        Fitness.getHistoryClient(this, GoogleSignIn.getLastSignedInAccount(this))
-                .deleteData(request)
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void aVoid) {
-                        Log.i(TAG, "Successfully deleted today's sessions");
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        // The deletion will fail if the requesting app tries to delete data
-                        // that it did not insert.
-                        Log.i(TAG, "Failed to delete today's sessions");
-                    }
-                });
-    }
-
-    /** Returns the current state of the permissions needed. */
     private boolean hasRuntimePermissions() {
         int permissionState =
                 ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
         return permissionState == PackageManager.PERMISSION_GRANTED;
     }
-
-//    private void requestRuntimePermissions() {
-//        boolean shouldProvideRationale =
-//                ActivityCompat.shouldShowRequestPermissionRationale(this,
-//                        Manifest.permission.ACCESS_FINE_LOCATION);
-//
-//        // Provide an additional rationale to the user. This would happen if the user denied the
-//        // request previously, but didn't check the "Don't ask again" checkbox.
-//        if (shouldProvideRationale) {
-//            Log.i(TAG, "Displaying permission rationale to provide additional context.");
-//            Snackbar.make(
-//                    findViewById(R.id.main_activity_view),
-//                    R.string.permission_rationale,
-//                    Snackbar.LENGTH_INDEFINITE)
-//                    .setAction(R.string.ok, new View.OnClickListener() {
-//                        @Override
-//                        public void onClick(View view) {
-//                            // Request permission
-//                            ActivityCompat.requestPermissions(MainActivity.this,
-//                                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-//                                    REQUEST_PERMISSIONS_REQUEST_CODE);
-//                        }
-//                    })
-//                    .show();
-//        } else {
-//            Log.i(TAG, "Requesting permission");
-//            // Request permission. It's possible this can be auto answered if device policy
-//            // sets the permission in a given state or the user denied the permission
-//            // previously and checked "Never ask again".
-//            ActivityCompat.requestPermissions(MainActivity.this,
-//                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-//                    REQUEST_PERMISSIONS_REQUEST_CODE);
-//        }
-//    }
 
     /**
      * Callback received when a permissions request has been completed.
@@ -460,15 +293,15 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
-        Log.i(TAG, "onRequestPermissionResult");
+        System.out.println("onRequestPermissionResult");
         if (requestCode == REQUEST_PERMISSIONS_REQUEST_CODE) {
             if (grantResults.length <= 0) {
                 // If user interaction was interrupted, the permission request is cancelled and you
                 // receive empty arrays.
-                Log.i(TAG, "User interaction was cancelled.");
+                System.out.println("User interaction was cancelled.");
             } else if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // Permission was granted.
-                insertAndVerifySessionWrapper();
+                System.out.println("Permssion Granted");
 
             } else {
                 // Permission denied.
@@ -483,9 +316,8 @@ public class MainActivity extends AppCompatActivity {
                 // again" prompts). Therefore, a user interface affordance is typically implemented
                 // when permissions are denied. Otherwise, your app could appear unresponsive to
                 // touches or interactions which have required permissions.
-                System.out.println("Something about snacks and bars was here");
+                fitData.setText("Permission Denied");
             }
         }
     }
-
 }
