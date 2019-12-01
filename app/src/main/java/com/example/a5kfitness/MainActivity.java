@@ -73,7 +73,7 @@ public class MainActivity extends AppCompatActivity {
             sessionsRequest =  readFitnessSession();
             data = sessionsRequest.toString();
             fitData.setText("Data: ");
-            readHistoryData();
+//            readHistoryData();
             verifySession();
 
     }
@@ -164,14 +164,13 @@ public class MainActivity extends AppCompatActivity {
 
                         for (Session session : sessions) {
                             // Process the session
-                            logSession(session);
-                            fitData.append("\n" + session.getActivity());
-
-                            // Process the data sets for this session
-                            List<DataSet> dataSets = sessionReadResponse.getDataSet(session);
-                            for (DataSet dataSet : dataSets) {
-                                fitData.append(dataSet.toString());
-                                logDataSet(dataSet);
+                            if(session.getActivity().contains("running")) {
+                                logSession(session);
+                                // Process the data sets for this session
+                                List<DataSet> dataSets = sessionReadResponse.getDataSet(session);
+                                for (DataSet dataSet : dataSets) {
+                                    logDataSet(dataSet);
+                                }
                             }
                         }
                     }
@@ -185,8 +184,8 @@ public class MainActivity extends AppCompatActivity {
         // [END read_session]
     }
 
-    private Task<DataReadResponse> readHistoryData(){
-        DataReadRequest readRequest = queryFitnessData();
+    private Task<DataReadResponse> readHistoryData(long startTime, long endTime){
+        DataReadRequest readRequest = queryFitnessData(startTime, endTime);
 
         return Fitness.getHistoryClient(this, GoogleSignIn.getLastSignedInAccount(this))
                 .readData(readRequest)
@@ -200,14 +199,11 @@ public class MainActivity extends AppCompatActivity {
                 );
     }
 
-    public static DataReadRequest queryFitnessData(){
-        Calendar cal = Calendar.getInstance();
-        Date now = new Date();
-        cal.setTime(now);
-        long endTime = cal.getTimeInMillis();
-        cal.add(Calendar.DAY_OF_YEAR, -1);
-        long startTime = cal.getTimeInMillis();
+    public static double metersToMiles(double meters) {
+        return meters/1609.355;
+    }
 
+    public static DataReadRequest queryFitnessData(long endTime, long startTime){
         DateFormat dateFormat = getDateInstance();
 
         Log.i(TAG, "Start of data Search: " + dateFormat.format(startTime));
@@ -216,7 +212,6 @@ public class MainActivity extends AppCompatActivity {
         DataReadRequest readRequest =
                 new DataReadRequest.Builder()
                 .aggregate(DataType.TYPE_DISTANCE_DELTA, DataType.AGGREGATE_DISTANCE_DELTA)
-                        .aggregate(DataType.TYPE_ACTIVITY_SEGMENT, DataType.AGGREGATE_ACTIVITY_SUMMARY)
                 .bucketByTime(1, TimeUnit.DAYS)
                 .setTimeRange(startTime, endTime, TimeUnit.MILLISECONDS)
                 .build();
@@ -253,6 +248,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void logSession(Session session) {
         DateFormat dateFormat = getTimeInstance();
+
         Log.i(TAG, "Data returned for Session: " + session.getName()
                 + "\n\tDescription: " + session.getDescription()
                 + "\n\tActivity: " + session.getActivity()
