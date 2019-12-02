@@ -75,7 +75,12 @@ public class MainActivity extends AppCompatActivity {
             data = sessionsRequest.toString();
             fitData.setText("Data: ");
 //            readHistoryData();
+        try{
             verifySession();
+        } catch (Exception e) {
+            Log.i(TAG, "Exception Found: " + e);
+        }
+
 
     }
 
@@ -129,8 +134,6 @@ public class MainActivity extends AppCompatActivity {
         // Build a session read request
         SessionReadRequest readRequest = new SessionReadRequest.Builder()
                 .setTimeInterval(startTime, endTime, TimeUnit.MILLISECONDS)
-//                .read(DataType.TYPE_ACTIVITY_SEGMENT)
-//                .readSessionsFromAllApps().enableServerQueries()
                 .read(DataType.TYPE_DISTANCE_CUMULATIVE)
                 .read(DataType.AGGREGATE_DISTANCE_DELTA)
                 .readSessionsFromAllApps()
@@ -229,6 +232,7 @@ public class MainActivity extends AppCompatActivity {
                     logDataSet(dataSet);
                 }
             }
+            fitData.append("Total Distance" + distance);
         }
     }
 
@@ -247,7 +251,6 @@ public class MainActivity extends AppCompatActivity {
                         " Value: " + dp.getValue(field));
             }
             Log.i(TAG, "Total Distance: " + metersToMiles(distance) + " miles");
-            fitData.append("\nTotal Distance: " + metersToMiles(distance) + " miles");
         }
     }
 
@@ -280,15 +283,6 @@ public class MainActivity extends AppCompatActivity {
 //    }
 
     /**
-     * Returns the current state of the permissions needed.
-     */
-    private boolean hasRuntimePermissions() {
-        int permissionState =
-                ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
-        return permissionState == PackageManager.PERMISSION_GRANTED;
-    }
-
-    /**
      * Callback received when a permissions request has been completed.
      */
     @Override
@@ -299,10 +293,10 @@ public class MainActivity extends AppCompatActivity {
             if (grantResults.length <= 0) {
                 // If user interaction was interrupted, the permission request is cancelled and you
                 // receive empty arrays.
-                System.out.println("User interaction was cancelled.");
+                Log.i(TAG,"User interaction was cancelled.");
             } else if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // Permission was granted.
-                System.out.println("Permssion Granted");
+                Log.i(TAG,"Must grant permissions");
 
             } else {
                 // Permission denied.
