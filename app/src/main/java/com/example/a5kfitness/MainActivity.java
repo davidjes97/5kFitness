@@ -1,6 +1,5 @@
 package com.example.a5kfitness;
 
-import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
@@ -8,16 +7,13 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
-import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.fitness.Fitness;
 import com.google.android.gms.fitness.FitnessOptions;
 import com.google.android.gms.fitness.data.Bucket;
 import com.google.android.gms.fitness.data.DataPoint;
 import com.google.android.gms.fitness.data.DataSet;
-import com.google.android.gms.fitness.data.DataSource;
 import com.google.android.gms.fitness.data.DataType;
 import com.google.android.gms.fitness.data.Field;
 import com.google.android.gms.fitness.data.Session;
@@ -25,12 +21,12 @@ import com.google.android.gms.fitness.request.DataReadRequest;
 import com.google.android.gms.fitness.request.SessionReadRequest;
 import com.google.android.gms.fitness.result.DataReadResponse;
 import com.google.android.gms.fitness.result.SessionReadResponse;
-import com.google.android.gms.fitness.result.SessionReadResult;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 
 import java.text.DateFormat;
+import java.text.DecimalFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -60,6 +56,7 @@ public class MainActivity extends AppCompatActivity {
     public static TextView fitData;
     public String data;
     public static double distance = 0;
+    DecimalFormat decimalFormat = new DecimalFormat("0.00");
 
 
     @Override
@@ -175,6 +172,7 @@ public class MainActivity extends AppCompatActivity {
                                 for (DataSet dataSet : dataSets) {
                                     logDataSet(dataSet);
                                 }
+                                fitData.setText("Total Distance: " + decimalFormat.format(metersToMiles(distance)) + " miles");
                             }
                         }
                     }
