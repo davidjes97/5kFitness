@@ -1,9 +1,11 @@
 package com.example.a5kfitness;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -47,6 +49,7 @@ import static java.text.DateFormat.getTimeInstance;
  * represent data in a Session, as well as how to use ActivitySegments.
  */
 public class MainActivity extends AppCompatActivity {
+    private TextView settingsLink;
     private static final String TAG = "FIT_TAG";
     private static final int REQUEST_OAUTH_REQUEST_CODE = 1;
     private static final int REQUEST_PERMISSIONS_REQUEST_CODE = 34;
@@ -68,6 +71,14 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         fitData = findViewById(R.id.fit_Data);
 
+        settingsLink = findViewById(R.id.settingsLink);
+        settingsLink.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                openSettingsPage();
+            }
+        });
+
         if(!hasOAuthPermission()){
             requestOAuthPermission();
         }
@@ -80,8 +91,11 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             Log.i(TAG, "Exception Found: " + e);
         }
+    }
 
-
+    public void openSettingsPage() {
+        Intent intent = new Intent(this, Settings.class);
+        startActivity(intent);
     }
 
     /**
