@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "206232377252",
+    "firebase_url": "https://ktrainer-c8c7d.firebaseio.com",
+    "project_id": "ktrainer-c8c7d",
+    "storage_bucket": "ktrainer-c8c7d.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:206232377252:android:957e6cef3d793defc09331",
+        "android_client_info": {
+          "package_name": "com.example.a5kfitness"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "206232377252-7imr2nh9fa2i8hom8obb1sgju0nmjfcq.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBVtSp9QzmSApqEhf_RgEQ6svqjzHfPEu0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "206232377252-7imr2nh9fa2i8hom8obb1sgju0nmjfcq.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
