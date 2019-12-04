@@ -1,5 +1,7 @@
 <resources>
     <string name="app_name">5kFitness</string>
     <string name="action_settings">Settings</string>
+    <string name="refreshButton">refreshButton</string>
+    <string name="title">5k Fitness</string>
 
 </resources>

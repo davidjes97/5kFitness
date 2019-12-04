@@ -3,6 +3,8 @@ package com.example.a5kfitness;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -63,8 +65,16 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.content_main);
         fitData = findViewById(R.id.fit_Data);
+
+        ImageButton refreshButton = findViewById(R.id.refreshButton);
+        refreshButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                recreate();
+            }
+        });
 
         if(!hasOAuthPermission()){
             requestOAuthPermission();
