@@ -1,25 +1,19 @@
 package com.example.a5kfitness;
 
-import android.Manifest;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
-import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.fitness.Fitness;
 import com.google.android.gms.fitness.FitnessOptions;
 import com.google.android.gms.fitness.data.Bucket;
 import com.google.android.gms.fitness.data.DataPoint;
 import com.google.android.gms.fitness.data.DataSet;
-import com.google.android.gms.fitness.data.DataSource;
 import com.google.android.gms.fitness.data.DataType;
 import com.google.android.gms.fitness.data.Field;
 import com.google.android.gms.fitness.data.Session;
@@ -27,12 +21,12 @@ import com.google.android.gms.fitness.request.DataReadRequest;
 import com.google.android.gms.fitness.request.SessionReadRequest;
 import com.google.android.gms.fitness.result.DataReadResponse;
 import com.google.android.gms.fitness.result.SessionReadResponse;
-import com.google.android.gms.fitness.result.SessionReadResult;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 
 import java.text.DateFormat;
+import java.text.DecimalFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -49,7 +43,6 @@ import static java.text.DateFormat.getTimeInstance;
  * represent data in a Session, as well as how to use ActivitySegments.
  */
 public class MainActivity extends AppCompatActivity {
-    private TextView settingsLink;
     private static final String TAG = "FIT_TAG";
     private static final int REQUEST_OAUTH_REQUEST_CODE = 1;
     private static final int REQUEST_PERMISSIONS_REQUEST_CODE = 34;
@@ -63,6 +56,7 @@ public class MainActivity extends AppCompatActivity {
     public static TextView fitData;
     public String data;
     public static double distance = 0;
+    DecimalFormat decimalFormat = new DecimalFormat("0.00");
 
 
     @Override
@@ -70,14 +64,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         fitData = findViewById(R.id.fit_Data);
-
-        settingsLink = findViewById(R.id.settingsLink);
-        settingsLink.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                openSettingsPage();
-            }
-        });
 
         if(!hasOAuthPermission()){
             requestOAuthPermission();
@@ -91,11 +77,8 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             Log.i(TAG, "Exception Found: " + e);
         }
-    }
 
-    public void openSettingsPage() {
-        Intent intent = new Intent(this, Settings.class);
-        startActivity(intent);
+
     }
 
     /**
@@ -189,6 +172,7 @@ public class MainActivity extends AppCompatActivity {
                                 for (DataSet dataSet : dataSets) {
                                     logDataSet(dataSet);
                                 }
+                                fitData.setText("Total Distance: " + decimalFormat.format(metersToMiles(distance)) + " miles");
                             }
                         }
                     }
