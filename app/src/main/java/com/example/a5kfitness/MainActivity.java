@@ -24,6 +24,10 @@ import com.google.android.gms.fitness.result.SessionReadResponse;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 import java.text.DateFormat;
 import java.text.DecimalFormat;
@@ -46,17 +50,14 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "FIT_TAG";
     private static final int REQUEST_OAUTH_REQUEST_CODE = 1;
     private static final int REQUEST_PERMISSIONS_REQUEST_CODE = 34;
-//    private static final String SAMPLE_SESSION_NAME = "Lunch walk";
-//    private static final int GOOGLE_FIT_RUNNING_ATIVITY = 8;
-//    private static final int GGOOGLE_FIT_JOGGING_ACTIVITY = 56;
-//    private static final int GOOGLE_FIT_RUNNING_ON_SAND_ACTIVITY = 57;
-//    private static final int GOOGLE_FIT_RUNNING_ON_TREADMILL_ACTIVITY = 58;
-    private static final int GOOGLE_FIT_TREADMILL_ACTIVITY = 88;
     private SessionReadRequest sessionsRequest;
     public static TextView fitData;
+    public static TextView goalDist;
+    public Double goalDistance;
     public String data;
     public static double distance = 0;
     DecimalFormat decimalFormat = new DecimalFormat("0.00");
+    public DatabaseReference todaysGoalDistance;
 
 
     @Override
@@ -78,7 +79,36 @@ public class MainActivity extends AppCompatActivity {
             Log.i(TAG, "Exception Found: " + e);
         }
 
+        getTodaysGoal();
 
+
+    }
+
+    private void getTodaysGoal() {
+        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        DatabaseReference myRef = database.getReference("5kTrainingPlan");
+        Calendar cal = Calendar.getInstance();
+        int dayOfMonth = cal.get(Calendar.DAY_OF_MONTH);
+        goalDist = findViewById(R.id.goal_dist);
+
+        String dayOfMonthStr = String.valueOf(dayOfMonth);
+
+        todaysGoalDistance = myRef.child(dayOfMonthStr).child("distance");
+
+        todaysGoalDistance.addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                goalDistance = (Double) dataSnapshot.getValue();
+                Log.i(TAG, "Got: " + goalDistance);
+                String goal = "Goal Distance " + goalDistance + " miles";
+                goalDist.setText(goal);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
     }
 
     /**
