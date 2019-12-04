@@ -58,6 +58,7 @@ public class MainActivity extends AppCompatActivity {
     public Double goalDistance;
     public String data;
     public static double distance = 0;
+    public static double steps = 0;
     DecimalFormat decimalFormat = new DecimalFormat("0.00");
     public DatabaseReference todaysGoalDistance;
 
@@ -173,6 +174,7 @@ public class MainActivity extends AppCompatActivity {
                 .setTimeInterval(startTime, endTime, TimeUnit.MILLISECONDS)
                 .read(DataType.TYPE_DISTANCE_CUMULATIVE)
                 .read(DataType.AGGREGATE_DISTANCE_DELTA)
+                .read(DataType.TYPE_STEP_COUNT_CUMULATIVE)
                 .readSessionsFromAllApps()
                 .enableServerQueries()
                 .build();
@@ -199,7 +201,6 @@ public class MainActivity extends AppCompatActivity {
                     public void onSuccess(SessionReadResponse sessionReadResponse) {
                         // Get a list of the sessions that match the criteria to check the result.
                         List<Session> sessions = sessionReadResponse.getSessions();
-                        fitData.append("Made it in " + sessions.size());
                         Log.i(TAG, "Session read was successful. Number of returned sessions is: "
                                 + sessions.size());
 
@@ -212,7 +213,7 @@ public class MainActivity extends AppCompatActivity {
                                 for (DataSet dataSet : dataSets) {
                                     logDataSet(dataSet);
                                 }
-                                fitData.setText("Total Distance: " + decimalFormat.format(metersToMiles(distance)) + " miles");
+                                fitData.setText("Total Distance: " + decimalFormat.format(metersToMiles(distance)) + " miles\nTotal Steps: " + steps);
                             }
                         }
                     }
@@ -285,10 +286,15 @@ public class MainActivity extends AppCompatActivity {
             for(Field field : dp.getDataType().getFields()) {
                 if(field.getName().contains("distance"))
                     distance += dp.getValue(field).asFloat();
+                if(field.getName().contains("steps")) {
+                    Log.d(TAG, "\t\t\nHit steps");
+                  steps = Double.parseDouble(dp.getValue(field).toString());
+                }
+
                 Log.i(TAG, "\tField: " + field.getName() +
                         " Value: " + dp.getValue(field));
             }
-            Log.i(TAG, "Total Distance: " + metersToMiles(distance) + " miles");
+            Log.i(TAG, "Total Distance: " + metersToMiles(distance) + " miles\n Total Steps: " + steps);
         }
     }
 
