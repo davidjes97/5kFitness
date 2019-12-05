@@ -6,7 +6,9 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.PopupMenu;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -57,7 +59,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     private SessionReadRequest sessionsRequest;
     public static TextView fitData;
     public static TextView goalDist;
-    public Double goalDistance;
+    public double goalDistance;
     public String data;
     public static double distance = 0;
     public static double steps = 0;
@@ -79,13 +81,12 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         data = sessionsRequest.toString();
         fitData.setText("Data: ");
 //            readHistoryData();
+
         try {
             verifySession();
         } catch (Exception e) {
             Log.i(TAG, "Exception Found: " + e);
         }
-
-        getTodaysGoal();
     }
 
     public void showMenu(View view) {
@@ -105,7 +106,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         return false;
     }
 
-    private void getTodaysGoal() {
+    private void getTodaysGoal(final double dist) {
         FirebaseDatabase database = FirebaseDatabase.getInstance();
         DatabaseReference myRef = database.getReference("5kTrainingPlan");
         Calendar cal = Calendar.getInstance();
@@ -123,6 +124,20 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
                 Log.i(TAG, "Got: " + goalDistance);
                 String goal = "Goal Distance " + goalDistance + " miles";
                 goalDist.setText(goal);
+
+                double percentCom = 100 * (metersToMiles(dist) / goalDistance);
+
+                TextView textPercent = findViewById(R.id.percentComplete);
+                String text = decimalFormat.format(percentCom) + "%";
+                textPercent.setText(text);
+
+                //ProgressBar progressBar2 = findViewById(R.id.background_progressbar);
+                //progressBar2.bringToFront();
+
+                ProgressBar progressBar = findViewById(R.id.stats_progressbar);
+                int progress = (int) percentCom;
+                progressBar.setProgress(progress);
+                //progressBar.bringToFront();
             }
 
             @Override
@@ -200,6 +215,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
      * Creates and executes a {@link SessionReadRequest} using {@link
      */
     private Task<SessionReadResponse> verifySession() {
+
         // Begin by creating the query.
         SessionReadRequest readRequest = readFitnessSession();
 
@@ -231,6 +247,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
                                         + "\nTotal Expended Calories: " + decimalFormat.format(calories) + "\nDuration: " + (msToString(session.getEndTime(TimeUnit.MILLISECONDS) - session.getStartTime(TimeUnit.MILLISECONDS))));
                             }
                         }
+                        getTodaysGoal(distance);
                     }
                 }).addOnFailureListener(new OnFailureListener() {
                     @Override
@@ -284,13 +301,12 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
             Log.i(TAG, "\tStart: " + dateFormat.format(dp.getStartTime(TimeUnit.MILLISECONDS)));
             Log.i(TAG, "\tEnd: " + dateFormat.format(dp.getEndTime(TimeUnit.MILLISECONDS)));
             Log.i(TAG, "\tDuration: " + (msToString(dp.getEndTime(TimeUnit.MILLISECONDS) - dp.getStartTime(TimeUnit.MILLISECONDS))));
-            for(Field field : dp.getDataType().getFields()) {
-                if(field.getName().contains("distance"))
+            for (Field field : dp.getDataType().getFields()) {
+                if (field.getName().contains("distance"))
                     distance += dp.getValue(field).asFloat();
-                else if(field.getName().contains("steps")) {
+                else if (field.getName().contains("steps")) {
                     steps = Double.parseDouble(dp.getValue(field).toString());
-                }
-                else if(field.getName().contains("calories")){
+                } else if (field.getName().contains("calories")) {
                     calories += Double.parseDouble(dp.getValue(field).toString());
                 }
 
@@ -299,7 +315,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     }
 
     public static String msToString(long ms) {
-        long totalSecs = ms/1000;
+        long totalSecs = ms / 1000;
         long hours = (totalSecs / 3600);
         long mins = (totalSecs / 60) % 60;
         long secs = totalSecs % 60;
