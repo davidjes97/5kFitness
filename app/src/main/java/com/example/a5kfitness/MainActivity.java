@@ -6,7 +6,6 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.EditText;
 import android.widget.PopupMenu;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -87,9 +86,6 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         } catch (Exception e) {
             Log.i(TAG, "Exception Found: " + e);
         }
-
-        getTodaysGoal();
-
     }
 
     public void showMenu(View view) {
