@@ -6,7 +6,6 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.ImageButton;
 import android.widget.PopupMenu;
 import android.widget.TextView;
 
@@ -72,14 +71,6 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         super.onCreate(savedInstanceState);
         setContentView(R.layout.content_main);
         fitData = findViewById(R.id.fit_Data);
-
-        ImageButton refreshButton = findViewById(R.id.refreshButton);
-        refreshButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                recreate();
-            }
-        });
 
         if (!hasOAuthPermission()) {
             requestOAuthPermission();
@@ -251,21 +242,6 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         // [END read_session]
     }
 
-    private Task<DataReadResponse> readHistoryData(long startTime, long endTime) {
-        DataReadRequest readRequest = queryFitnessData(startTime, endTime);
-
-        return Fitness.getHistoryClient(this, GoogleSignIn.getLastSignedInAccount(this))
-                .readData(readRequest)
-                .addOnSuccessListener(
-                        new OnSuccessListener<DataReadResponse>() {
-                            @Override
-                            public void onSuccess(DataReadResponse dataReadResponse) {
-                                logDataResponse(dataReadResponse);
-                            }
-                        }
-                );
-    }
-
     public static double metersToMiles(double meters) {
         return meters / 1609.355;
     }
@@ -312,7 +288,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
                 if(field.getName().contains("distance"))
                     distance += dp.getValue(field).asFloat();
                 else if(field.getName().contains("steps")) {
-                    steps += Double.parseDouble(dp.getValue(field).toString());
+                    steps = Double.parseDouble(dp.getValue(field).toString());
                 }
                 else if(field.getName().contains("calories")){
                     calories += Double.parseDouble(dp.getValue(field).toString());
@@ -353,24 +329,6 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
                 + "\n\tStart: " + dateFormat.format(session.getStartTime(TimeUnit.MILLISECONDS))
                 + "\n\tEnd: " + dateFormat.format(session.getEndTime(TimeUnit.MILLISECONDS)));
     }
-
-//    private void readAllRequests () {
-//        Calendar cal = Calendar.getInstance();
-//        Date now = new Date();
-//        cal.setTime(now);
-//        long endTime = cal.getTimeInMillis();
-//        cal.add(Calendar.WEEK_OF_YEAR, -1);
-//        long startTime = cal.getTimeInMillis();
-//
-//        SessionReadRequest readRequest = new SessionReadRequest.Builder()
-//                .setTimeInterval(startTime, endTime, TimeUnit.MILLISECONDS)
-//                .read(DataType.TYPE_DISTANCE_CUMULATIVE)
-//                .setSessionName(SAMPLE_SESSION_NAME)
-//                .build();
-//
-//        PendingResult<SessionReadResult> sessionReadResult =
-//                Fitness.getSessionsClient().readSession();
-//    }
 
     /**
      * Callback received when a permissions request has been completed.
