@@ -5,5 +5,7 @@
     <string name="title">5k Fitness</string>
     <string name="futureTitle">Future Workouts</string>
     <string name="todays_workout">Today\'s Workout</string>
+    <string name="todays_progress">Today\'s Progress</string>
+    <string name="percent_com">Today\'s Percent Complete</string>
 
 </resources>
