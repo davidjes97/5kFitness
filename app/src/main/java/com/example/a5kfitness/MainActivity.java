@@ -1,10 +1,13 @@
 package com.example.a5kfitness;
 
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageButton;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -48,7 +51,7 @@ import static java.text.DateFormat.getTimeInstance;
  * demonstrates how to authenticate a user with Google Play Services and how to properly
  * represent data in a Session, as well as how to use ActivitySegments.
  */
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuItemClickListener {
     private static final String TAG = "FIT_TAG";
     private static final int REQUEST_OAUTH_REQUEST_CODE = 1;
     private static final int REQUEST_PERMISSIONS_REQUEST_CODE = 34;
@@ -78,22 +81,37 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        if(!hasOAuthPermission()){
+        if (!hasOAuthPermission()) {
             requestOAuthPermission();
         }
-            sessionsRequest =  readFitnessSession();
-            data = sessionsRequest.toString();
-            fitData.setText("Data: ");
+        sessionsRequest = readFitnessSession();
+        data = sessionsRequest.toString();
+        fitData.setText("Data: ");
 //            readHistoryData();
-        try{
+        try {
             verifySession();
         } catch (Exception e) {
             Log.i(TAG, "Exception Found: " + e);
         }
 
         getTodaysGoal();
+    }
 
+    public void showMenu(View view) {
+        PopupMenu popupMenu = new PopupMenu(this, view);
+        popupMenu.setOnMenuItemClickListener(this);
+        popupMenu.inflate(R.menu.popup_menu);
+        popupMenu.show();
+    }
 
+    @Override
+    public boolean onMenuItemClick(MenuItem menuItem) {
+        if (menuItem.getItemId() == R.id.futureWorkouts) {
+            Intent intent = new Intent(this, FutureWorkoutsActivity.class);
+            startActivity(intent);
+            return true;
+        }
+        return false;
     }
 
     private void getTodaysGoal() {
@@ -188,7 +206,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     *  Creates and executes a {@link SessionReadRequest} using {@link
+     * Creates and executes a {@link SessionReadRequest} using {@link
      */
     private Task<SessionReadResponse> verifySession() {
         // Begin by creating the query.
@@ -210,7 +228,7 @@ public class MainActivity extends AppCompatActivity {
 
                         for (Session session : sessions) {
                             // Process the session
-                            if(session.getActivity().contains("running")) {
+                            if (session.getActivity().contains("running")) {
                                 logSession(session);
                                 // Process the data sets for this session
                                 List<DataSet> dataSets = sessionReadResponse.getDataSet(session);
@@ -233,7 +251,7 @@ public class MainActivity extends AppCompatActivity {
         // [END read_session]
     }
 
-    private Task<DataReadResponse> readHistoryData(long startTime, long endTime){
+    private Task<DataReadResponse> readHistoryData(long startTime, long endTime) {
         DataReadRequest readRequest = queryFitnessData(startTime, endTime);
 
         return Fitness.getHistoryClient(this, GoogleSignIn.getLastSignedInAccount(this))
@@ -249,10 +267,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public static double metersToMiles(double meters) {
-        return meters/1609.355;
+        return meters / 1609.355;
     }
 
-    public static DataReadRequest queryFitnessData(long endTime, long startTime){
+    public static DataReadRequest queryFitnessData(long endTime, long startTime) {
         DateFormat dateFormat = getDateInstance();
 
         Log.i(TAG, "Start of data Search: " + dateFormat.format(startTime));
@@ -260,20 +278,20 @@ public class MainActivity extends AppCompatActivity {
 
         DataReadRequest readRequest =
                 new DataReadRequest.Builder()
-                .aggregate(DataType.TYPE_DISTANCE_DELTA, DataType.AGGREGATE_DISTANCE_DELTA)
-                .bucketByTime(1, TimeUnit.DAYS)
-                .setTimeRange(startTime, endTime, TimeUnit.MILLISECONDS)
-                .build();
+                        .aggregate(DataType.TYPE_DISTANCE_DELTA, DataType.AGGREGATE_DISTANCE_DELTA)
+                        .bucketByTime(1, TimeUnit.DAYS)
+                        .setTimeRange(startTime, endTime, TimeUnit.MILLISECONDS)
+                        .build();
 
         return readRequest;
     }
 
-    public static void logDataResponse(DataReadResponse dataReadResult){
-        if(dataReadResult.getBuckets().size() > 0) {
+    public static void logDataResponse(DataReadResponse dataReadResult) {
+        if (dataReadResult.getBuckets().size() > 0) {
             Log.i(TAG, "Number of buckets of DataSets is: " + dataReadResult.getBuckets().size());
-            for(Bucket bucket: dataReadResult.getBuckets()){
+            for (Bucket bucket : dataReadResult.getBuckets()) {
                 List<DataSet> dataSets = bucket.getDataSets();
-                for(DataSet dataSet: dataSets) {
+                for (DataSet dataSet : dataSets) {
                     logDataSet(dataSet);
                 }
             }
@@ -283,7 +301,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static void logDataSet(DataSet dataSet) {
         Log.i(TAG, "Data returned from Data type: " + dataSet.getDataType());
-        for(DataPoint dp: dataSet.getDataPoints()) {
+        for (DataPoint dp : dataSet.getDataPoints()) {
             DateFormat dateFormat = getTimeInstance();
             Log.i(TAG, "Data point:");
             Log.i(TAG, "\tType: " + dp.getDataType().getName());
@@ -365,10 +383,10 @@ public class MainActivity extends AppCompatActivity {
             if (grantResults.length <= 0) {
                 // If user interaction was interrupted, the permission request is cancelled and you
                 // receive empty arrays.
-                Log.i(TAG,"User interaction was cancelled.");
+                Log.i(TAG, "User interaction was cancelled.");
             } else if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // Permission was granted.
-                Log.i(TAG,"Must grant permissions");
+                Log.i(TAG, "Must grant permissions");
 
             } else {
                 // Permission denied.
