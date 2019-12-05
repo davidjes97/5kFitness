@@ -59,8 +59,8 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     private SessionReadRequest sessionsRequest;
     public static TextView fitData;
     public static TextView goalDist;
-    public double goalDistance;
-    public String data;
+    public Double goalDistance = 0.0;
+    public String data = "";
     public static double distance = 0;
     public static double steps = 0;
     public static double calories = 0;
@@ -87,6 +87,9 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         } catch (Exception e) {
             Log.i(TAG, "Exception Found: " + e);
         }
+
+        getTodaysGoal();
+
     }
 
     public void showMenu(View view) {
