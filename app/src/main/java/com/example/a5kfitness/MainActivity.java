@@ -59,6 +59,7 @@ public class MainActivity extends AppCompatActivity {
     public String data;
     public static double distance = 0;
     public static double steps = 0;
+    public static double calories = 0;
     DecimalFormat decimalFormat = new DecimalFormat("0.00");
     public DatabaseReference todaysGoalDistance;
 
@@ -153,6 +154,8 @@ public class MainActivity extends AppCompatActivity {
                 .addDataType(DataType.TYPE_ACTIVITY_SEGMENT, FitnessOptions.ACCESS_READ)
                 .addDataType(DataType.TYPE_DISTANCE_CUMULATIVE, FitnessOptions.ACCESS_READ)
                 .addDataType(DataType.AGGREGATE_DISTANCE_DELTA, FitnessOptions.ACCESS_READ)
+                .addDataType(DataType.TYPE_STEP_COUNT_CUMULATIVE, FitnessOptions.ACCESS_READ)
+                .addDataType(DataType.TYPE_CALORIES_EXPENDED, FitnessOptions.ACCESS_READ)
                 .build();
     }
 
@@ -175,6 +178,7 @@ public class MainActivity extends AppCompatActivity {
                 .read(DataType.TYPE_DISTANCE_CUMULATIVE)
                 .read(DataType.AGGREGATE_DISTANCE_DELTA)
                 .read(DataType.TYPE_STEP_COUNT_CUMULATIVE)
+                .read(DataType.TYPE_CALORIES_EXPENDED)
                 .readSessionsFromAllApps()
                 .enableServerQueries()
                 .build();
@@ -213,7 +217,9 @@ public class MainActivity extends AppCompatActivity {
                                 for (DataSet dataSet : dataSets) {
                                     logDataSet(dataSet);
                                 }
-                                fitData.setText("Total Distance: " + decimalFormat.format(metersToMiles(distance)) + " miles\nTotal Steps: " + steps);
+                                fitData.setText("Total Distance: " +
+                                        decimalFormat.format(metersToMiles(distance)) + " miles\nTotal Steps: " + steps
+                                        + "\nTotal Expended Calories: " + decimalFormat.format(calories) + "\nDuration: " + (msToString(session.getEndTime(TimeUnit.MILLISECONDS) - session.getStartTime(TimeUnit.MILLISECONDS))));
                             }
                         }
                     }
@@ -283,19 +289,41 @@ public class MainActivity extends AppCompatActivity {
             Log.i(TAG, "\tType: " + dp.getDataType().getName());
             Log.i(TAG, "\tStart: " + dateFormat.format(dp.getStartTime(TimeUnit.MILLISECONDS)));
             Log.i(TAG, "\tEnd: " + dateFormat.format(dp.getEndTime(TimeUnit.MILLISECONDS)));
+            Log.i(TAG, "\tDuration: " + (msToString(dp.getEndTime(TimeUnit.MILLISECONDS) - dp.getStartTime(TimeUnit.MILLISECONDS))));
             for(Field field : dp.getDataType().getFields()) {
                 if(field.getName().contains("distance"))
                     distance += dp.getValue(field).asFloat();
-                if(field.getName().contains("steps")) {
-                    Log.d(TAG, "\t\t\nHit steps");
-                  steps = Double.parseDouble(dp.getValue(field).toString());
+                else if(field.getName().contains("steps")) {
+                    steps += Double.parseDouble(dp.getValue(field).toString());
+                }
+                else if(field.getName().contains("calories")){
+                    calories += Double.parseDouble(dp.getValue(field).toString());
                 }
 
-                Log.i(TAG, "\tField: " + field.getName() +
-                        " Value: " + dp.getValue(field));
             }
-            Log.i(TAG, "Total Distance: " + metersToMiles(distance) + " miles\n Total Steps: " + steps);
         }
+    }
+
+    public static String msToString(long ms) {
+        long totalSecs = ms/1000;
+        long hours = (totalSecs / 3600);
+        long mins = (totalSecs / 60) % 60;
+        long secs = totalSecs % 60;
+        String minsString = (mins == 0)
+                ? "00"
+                : ((mins < 10)
+                ? "0" + mins
+                : "" + mins);
+        String secsString = (secs == 0)
+                ? "00"
+                : ((secs < 10)
+                ? "0" + secs
+                : "" + secs);
+        if (hours > 0)
+            return hours + ":" + minsString + ":" + secsString;
+        else if (mins > 0)
+            return mins + ":" + secsString;
+        else return ":" + secsString;
     }
 
     private void logSession(Session session) {
