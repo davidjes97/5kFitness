@@ -73,14 +73,6 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         setContentView(R.layout.content_main);
         fitData = findViewById(R.id.fit_Data);
 
-        ImageButton refreshButton = findViewById(R.id.refreshButton);
-        refreshButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                recreate();
-            }
-        });
-
         if (!hasOAuthPermission()) {
             requestOAuthPermission();
         }
@@ -312,7 +304,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
                 if(field.getName().contains("distance"))
                     distance += dp.getValue(field).asFloat();
                 else if(field.getName().contains("steps")) {
-                    steps += Double.parseDouble(dp.getValue(field).toString());
+                    steps = Double.parseDouble(dp.getValue(field).toString());
                 }
                 else if(field.getName().contains("calories")){
                     calories += Double.parseDouble(dp.getValue(field).toString());

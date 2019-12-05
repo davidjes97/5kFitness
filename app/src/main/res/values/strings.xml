@@ -4,5 +4,6 @@
     <string name="refreshButton">refreshButton</string>
     <string name="title">5k Fitness</string>
     <string name="futureTitle">Future Workouts</string>
+    <string name="todays_workout">Today\'s Workout</string>
 
 </resources>
