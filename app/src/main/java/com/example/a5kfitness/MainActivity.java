@@ -58,7 +58,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     private SessionReadRequest sessionsRequest;
     public static TextView fitData;
     public static TextView goalDist;
-    public Double goalDistance = 0.0;
+    public double goalDistance = 0.0;
     public String data = "";
     public static double distance = 0;
     public static double steps = 0;
@@ -79,7 +79,6 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         sessionsRequest = readFitnessSession();
         data = sessionsRequest.toString();
         fitData.setText("Data: ");
-//            readHistoryData();
 
         try {
             verifySession();
@@ -106,7 +105,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
     }
 
     private void getTodaysGoal(final double dist) {
-        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        final FirebaseDatabase database = FirebaseDatabase.getInstance();
         DatabaseReference myRef = database.getReference("5kTrainingPlan");
         Calendar cal = Calendar.getInstance();
         int dayOfMonth = cal.get(Calendar.DAY_OF_MONTH);
@@ -119,7 +118,8 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
         todaysGoalDistance.addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                goalDistance = (Double) dataSnapshot.getValue();
+                Long temp = (Long) dataSnapshot.getValue();
+                goalDistance = (double) temp;
                 Log.i(TAG, "Got: " + goalDistance);
                 String goal = "Goal Distance " + goalDistance + " miles";
                 goalDist.setText(goal);
@@ -130,13 +130,9 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
                 String text = decimalFormat.format(percentCom) + "%";
                 textPercent.setText(text);
 
-                //ProgressBar progressBar2 = findViewById(R.id.background_progressbar);
-                //progressBar2.bringToFront();
-
                 ProgressBar progressBar = findViewById(R.id.stats_progressbar);
                 int progress = (int) percentCom;
                 progressBar.setProgress(progress);
-                //progressBar.bringToFront();
             }
 
             @Override
