@@ -298,7 +298,7 @@ public class MainActivity extends AppCompatActivity implements PopupMenu.OnMenuI
             Log.i(TAG, "\tDuration: " + (msToString(dp.getEndTime(TimeUnit.MILLISECONDS) - dp.getStartTime(TimeUnit.MILLISECONDS))));
             for (Field field : dp.getDataType().getFields()) {
                 if (field.getName().contains("distance"))
-                    distance = dp.getValue(field).asFloat();
+                    distance += dp.getValue(field).asFloat();
                 else if (field.getName().contains("steps")) {
                     steps = Double.parseDouble(dp.getValue(field).toString());
                 } else if (field.getName().contains("calories")) {
